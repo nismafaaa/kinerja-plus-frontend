@@ -23,23 +23,12 @@ export function renderIndikatorSasaran() {
       <div class="step-section" id="step-input-sasaran">
         <div class="step-label">
           <span class="step-number">1</span>
-          Masukkan Tujuan dan Sasaran Strategis
-        </div>
-        <div class="input-group">
-          <label class="input-group__label" for="input-tujuan-sasaran">Tujuan</label>
-          <p class="input-group__hint">
-            Ketik tujuan strategis organisasi Anda.
-          </p>
-          <textarea
-            id="input-tujuan-sasaran"
-            rows="2"
-            placeholder="Contoh: Meningkatkan kualitas layanan kesehatan masyarakat"
-          ></textarea>
+          Masukkan Sasaran Strategis
         </div>
         <div class="input-group">
           <label class="input-group__label" for="input-sasaran">Sasaran Strategis</label>
           <p class="input-group__hint">
-            Ketik sasaran strategis yang menjadi dasar indikator.
+            Ketik sasaran strategis organisasi Anda. AI akan memberikan rekomendasi indikator secara otomatis.
           </p>
           <textarea
             id="input-sasaran"
@@ -69,25 +58,20 @@ export function renderIndikatorSasaran() {
 }
 
 export function initIndikatorSasaran() {
-  const inputTujuan = document.getElementById('input-tujuan-sasaran');
-  const inputSasaran = document.getElementById('input-sasaran');
+  const input = document.getElementById('input-sasaran');
   const btn = document.getElementById('btn-generate-sasaran');
   const recsSection = document.getElementById('step-recommendations-sasaran');
   const recsContainer = document.getElementById('recs-container-sasaran');
 
-  if (!inputTujuan || !inputSasaran || !btn) return;
+  if (!input || !btn) return;
 
-  function validateInputs() {
-    btn.disabled = inputTujuan.value.trim().length < 5 || inputSasaran.value.trim().length < 5;
-  }
-
-  inputTujuan.addEventListener('input', validateInputs);
-  inputSasaran.addEventListener('input', validateInputs);
+  input.addEventListener('input', () => {
+    btn.disabled = input.value.trim().length < 5;
+  });
 
   btn.addEventListener('click', async () => {
-    const tujuanText = inputTujuan.value.trim();
-    const sasaranText = inputSasaran.value.trim();
-    if (!tujuanText || !sasaranText) return;
+    const inputText = input.value.trim();
+    if (!inputText) return;
 
     recsSection.style.display = 'block';
     recsContainer.innerHTML = renderSkeletonCards(6);
@@ -97,7 +81,7 @@ export function initIndikatorSasaran() {
     recsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-      const recs = await getRecommendations('sasaran', sasaranText);
+      const recs = await getRecommendations('sasaran', inputText);
 
       let html = '';
       const fieldOrder = [
@@ -124,7 +108,7 @@ export function initIndikatorSasaran() {
       `;
 
       initCardActions(recs);
-      initForecastSection(tujuanText, sasaranText);
+      initForecastSection('sasaran', inputText);
     } catch (err) {
       recsContainer.innerHTML = `
         <div class="empty-state">

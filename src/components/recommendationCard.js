@@ -124,10 +124,10 @@ export function renderTargetCard(data, index = 0) {
 
 /**
  * Initialize the forecast sub-feature inside the target card.
- * @param {string} tujuan - The tujuan/sasaran text from user input
- * @param {string} sasaran - The sasaran strategis text
+ * @param {'tujuan' | 'sasaran'} type - Which page is calling
+ * @param {string} value - The user's input text
  */
-export function initForecastSection(tujuan, sasaran) {
+export function initForecastSection(type, value) {
   const toggleBtn = document.getElementById('btn-toggle-forecast');
   const body = document.getElementById('forecast-body');
   const yearStart = document.getElementById('fc-year-start');
@@ -182,12 +182,16 @@ export function initForecastSection(tujuan, sasaran) {
     const inputs = fieldsContainer.querySelectorAll('.fc-value-input');
     const previousTargets = Array.from(inputs).map((inp) => parseFloat(inp.value) || 0);
 
+    // Build payload based on page type
     const payload = {
-      tujuan: tujuan,
-      sasaran_strategis: sasaran,
       previous_period: `${start}-${end}`,
       previous_targets: previousTargets,
     };
+    if (type === 'tujuan') {
+      payload.tujuan = value;
+    } else {
+      payload.sasaran_strategis = value;
+    }
 
     runBtn.disabled = true;
     runBtn.innerHTML = 'Menganalisis...';

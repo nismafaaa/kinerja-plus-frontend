@@ -23,27 +23,16 @@ export function renderIndikatorTujuan() {
       <div class="step-section" id="step-input">
         <div class="step-label">
           <span class="step-number">1</span>
-          Masukkan Tujuan dan Sasaran Strategis
+          Masukkan Tujuan Strategis
         </div>
         <div class="input-group">
           <label class="input-group__label" for="input-tujuan">Tujuan Strategis</label>
           <p class="input-group__hint">
-            Ketik tujuan strategis organisasi Anda.
+            Ketik tujuan strategis organisasi Anda. AI akan memberikan rekomendasi indikator secara otomatis.
           </p>
           <textarea
             id="input-tujuan"
             placeholder="Contoh: Meningkatkan kualitas layanan kesehatan masyarakat"
-          ></textarea>
-        </div>
-        <div class="input-group">
-          <label class="input-group__label" for="input-sasaran-tujuan">Sasaran Strategis</label>
-          <p class="input-group__hint">
-            Ketik sasaran strategis yang terkait dengan tujuan di atas.
-          </p>
-          <textarea
-            id="input-sasaran-tujuan"
-            rows="2"
-            placeholder="Contoh: Meningkatnya akses layanan kesehatan"
           ></textarea>
         </div>
         <button class="btn btn--ai" id="btn-generate-tujuan" disabled>
@@ -69,25 +58,20 @@ export function renderIndikatorTujuan() {
 }
 
 export function initIndikatorTujuan() {
-  const inputTujuan = document.getElementById('input-tujuan');
-  const inputSasaran = document.getElementById('input-sasaran-tujuan');
+  const input = document.getElementById('input-tujuan');
   const btn = document.getElementById('btn-generate-tujuan');
   const recsSection = document.getElementById('step-recommendations-tujuan');
   const recsContainer = document.getElementById('recs-container-tujuan');
 
-  if (!inputTujuan || !inputSasaran || !btn) return;
+  if (!input || !btn) return;
 
-  function validateInputs() {
-    btn.disabled = inputTujuan.value.trim().length < 5 || inputSasaran.value.trim().length < 5;
-  }
-
-  inputTujuan.addEventListener('input', validateInputs);
-  inputSasaran.addEventListener('input', validateInputs);
+  input.addEventListener('input', () => {
+    btn.disabled = input.value.trim().length < 5;
+  });
 
   btn.addEventListener('click', async () => {
-    const tujuanText = inputTujuan.value.trim();
-    const sasaranText = inputSasaran.value.trim();
-    if (!tujuanText || !sasaranText) return;
+    const inputText = input.value.trim();
+    if (!inputText) return;
 
     recsSection.style.display = 'block';
     recsContainer.innerHTML = renderSkeletonCards(6);
@@ -97,7 +81,7 @@ export function initIndikatorTujuan() {
     recsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-      const recs = await getRecommendations('tujuan', tujuanText);
+      const recs = await getRecommendations('tujuan', inputText);
 
       let html = '';
       const fieldOrder = [
@@ -124,7 +108,7 @@ export function initIndikatorTujuan() {
       `;
 
       initCardActions(recs);
-      initForecastSection(tujuanText, sasaranText);
+      initForecastSection('tujuan', inputText);
     } catch (err) {
       recsContainer.innerHTML = `
         <div class="empty-state">

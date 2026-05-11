@@ -214,8 +214,8 @@ export async function getRecommendations(type, inputText) {
  * Get AI-forecasted targets based on historical data.
  *
  * @param {object} payload - Forecast request payload
- * @param {string} payload.tujuan - Strategic goal
- * @param {string} payload.sasaran_strategis - Strategic target
+ * @param {string} [payload.tujuan] - Strategic goal (from tujuan page)
+ * @param {string} [payload.sasaran_strategis] - Strategic target (from sasaran page)
  * @param {string} payload.previous_period - e.g. "2021-2025"
  * @param {number[]} payload.previous_targets - Historical target values
  * @returns {Promise<object>} Forecast result
@@ -252,6 +252,11 @@ export async function getForecastRecommendations(payload) {
     previousSummary[startYear + i] = targets[i];
   }
 
+  // Build context string from whichever field is present
+  const contextLabel = payload.tujuan
+    ? `tujuan "${payload.tujuan}"`
+    : `sasaran strategis "${payload.sasaran_strategis}"`;
+
   return {
     payload: payload,
     previousPeriod: {
@@ -263,7 +268,7 @@ export async function getForecastRecommendations(payload) {
       values: forecastedTargets,
       reasoning:
         `AI menganalisis tren historis ${previous_period} dengan pertumbuhan rata-rata ${avgGrowth.toFixed(2)} per tahun. ` +
-        `Proyeksi mempertimbangkan tujuan "${payload.tujuan}" dan sasaran strategis "${payload.sasaran_strategis}". ` +
+        `Proyeksi mempertimbangkan ${contextLabel}. ` +
         `Metode: regresi linear sederhana berdasarkan data historis. Rekomendasi target dapat disesuaikan sesuai kapasitas daerah dan kebijakan RPJMD.`,
     },
     trendAnalysis: {
