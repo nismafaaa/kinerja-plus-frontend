@@ -7,6 +7,7 @@ import {
   renderRecommendationCard,
   renderTargetCard,
   initCardActions,
+  initForecastSection,
 } from '../components/recommendationCard.js';
 import { getRecommendations } from '../services/mockAiService.js';
 
@@ -35,7 +36,7 @@ export function renderIndikatorSasaran() {
           ></textarea>
         </div>
         <button class="btn btn--ai" id="btn-generate-sasaran" disabled>
-          ✨ Dapatkan Rekomendasi AI
+          Dapatkan Rekomendasi AI
         </button>
       </div>
 
@@ -77,7 +78,7 @@ export function initIndikatorSasaran() {
     recsSection.style.display = 'block';
     recsContainer.innerHTML = renderSkeletonCards(6);
     btn.disabled = true;
-    btn.innerHTML = '⏳ Menganalisis...';
+    btn.innerHTML = 'Menganalisis...';
 
     // Scroll to recommendations
     recsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -99,13 +100,12 @@ export function initIndikatorSasaran() {
         html += renderRecommendationCard(key, recs[key], i);
       });
 
-      // Target period card (special grid layout)
+      // Target period card (with embedded forecast sub-feature)
       html += renderTargetCard(recs.targetPeriode, fieldOrder.length);
 
       recsContainer.innerHTML = `
         <div class="recs-section">
           <div class="recs-section__title">
-            <span class="recs-section__ai-sparkle">🤖</span>
             Rekomendasi AI untuk Sasaran Anda
           </div>
           ${html}
@@ -114,16 +114,19 @@ export function initIndikatorSasaran() {
 
       // Initialize card action handlers
       initCardActions(recs);
+
+      // Initialize forecast sub-feature with user's sasaran context
+      initForecastSection(inputText, inputText);
     } catch (err) {
       recsContainer.innerHTML = `
         <div class="empty-state">
-          <div class="empty-state__icon">⚠️</div>
+          <div class="empty-state__icon">!</div>
           <div class="empty-state__text">Terjadi kesalahan saat memuat rekomendasi. Silakan coba lagi.</div>
         </div>
       `;
     }
 
     btn.disabled = false;
-    btn.innerHTML = '✨ Dapatkan Rekomendasi AI';
+    btn.innerHTML = 'Dapatkan Rekomendasi AI';
   });
 }

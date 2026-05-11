@@ -3,12 +3,12 @@
  */
 export function renderSidebar(activePage) {
   return `
-    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu">☰</button>
+    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
       <div class="sidebar__brand">
         <div class="sidebar__logo">
-          <div class="sidebar__logo-icon">📊</div>
+          <div class="sidebar__logo-icon">K+</div>
           <div>
             <span class="sidebar__logo-text">Kinerja Plus</span>
             <span class="sidebar__logo-badge">AI Prototype</span>
@@ -20,13 +20,13 @@ export function renderSidebar(activePage) {
         <a href="#/indikator-tujuan"
            class="sidebar__nav-item ${activePage === 'tujuan' ? 'sidebar__nav-item--active' : ''}"
            id="nav-tujuan">
-          <span class="sidebar__nav-icon">🎯</span>
+          <span class="sidebar__nav-icon">&bull;</span>
           Indikator Tujuan
         </a>
         <a href="#/indikator-sasaran"
            class="sidebar__nav-item ${activePage === 'sasaran' ? 'sidebar__nav-item--active' : ''}"
            id="nav-sasaran">
-          <span class="sidebar__nav-icon">📋</span>
+          <span class="sidebar__nav-icon">&bull;</span>
           Indikator Sasaran
         </a>
       </nav>

@@ -209,3 +209,72 @@ export async function getRecommendations(type, inputText) {
     },
   };
 }
+
+/**
+ * Get AI-forecasted targets based on historical data.
+ *
+ * @param {object} payload - Forecast request payload
+ * @param {string} payload.tujuan - Strategic goal
+ * @param {string} payload.sasaran_strategis - Strategic target
+ * @param {string} payload.previous_period - e.g. "2021-2025"
+ * @param {number[]} payload.previous_targets - Historical target values
+ * @returns {Promise<object>} Forecast result
+ */
+export async function getForecastRecommendations(payload) {
+  await randomDelay();
+
+  const { previous_period, previous_targets } = payload;
+
+  // Parse period years
+  const periodParts = previous_period.split('-').map((s) => parseInt(s.trim(), 10));
+  const startYear = periodParts[0] || 2021;
+  const endYear = periodParts[1] || 2025;
+  const periodLength = endYear - startYear + 1;
+
+  // Calculate simple growth trend from previous targets
+  const targets = previous_targets.length > 0 ? previous_targets : [80, 82, 84, 86, 88];
+  const first = targets[0];
+  const last = targets[targets.length - 1];
+  const avgGrowth = targets.length > 1 ? (last - first) / (targets.length - 1) : 2;
+
+  // Generate forecasted targets for the next period
+  const forecastStartYear = endYear + 1;
+  const forecastedTargets = {};
+  for (let i = 0; i < periodLength; i++) {
+    const year = forecastStartYear + i;
+    const projected = last + avgGrowth * (i + 1);
+    forecastedTargets[year] = parseFloat(Math.min(projected, 100).toFixed(2));
+  }
+
+  // Build previous period summary
+  const previousSummary = {};
+  for (let i = 0; i < targets.length; i++) {
+    previousSummary[startYear + i] = targets[i];
+  }
+
+  return {
+    payload: payload,
+    previousPeriod: {
+      label: `Riwayat Target (${previous_period})`,
+      values: previousSummary,
+    },
+    forecastedPeriod: {
+      label: `Proyeksi Target (${forecastStartYear}–${forecastStartYear + periodLength - 1})`,
+      values: forecastedTargets,
+      reasoning:
+        `AI menganalisis tren historis ${previous_period} dengan pertumbuhan rata-rata ${avgGrowth.toFixed(2)} per tahun. ` +
+        `Proyeksi mempertimbangkan tujuan "${payload.tujuan}" dan sasaran strategis "${payload.sasaran_strategis}". ` +
+        `Metode: regresi linear sederhana berdasarkan data historis. Rekomendasi target dapat disesuaikan sesuai kapasitas daerah dan kebijakan RPJMD.`,
+    },
+    trendAnalysis: {
+      label: 'Analisis Tren',
+      avgGrowthPerYear: avgGrowth.toFixed(2),
+      totalGrowth: (last - first).toFixed(2),
+      direction: avgGrowth >= 0 ? 'Meningkat' : 'Menurun',
+      reasoning:
+        `Dari data ${targets.length} tahun terakhir, teridentifikasi tren ${avgGrowth >= 0 ? 'positif' : 'negatif'} ` +
+        `dengan pertumbuhan kumulatif sebesar ${(last - first).toFixed(2)} poin. ` +
+        `Rata-rata pertumbuhan tahunan: ${avgGrowth.toFixed(2)} poin.`,
+    },
+  };
+}
