@@ -3,7 +3,7 @@
  *
  * Each card has a unique ID based on fieldKey to manage state.
  */
-import { getForecastRecommendations } from '../services/mockAiService.js';
+import { getForecastRecommendations } from '../services/apiClient.js';
 
 /**
  * Render a single recommendation card.
@@ -46,77 +46,39 @@ export function renderRecommendationCard(fieldKey, data, index = 0) {
 }
 
 /**
- * Render the target period card with embedded forecasting sub-feature.
+ * Render the standalone forecasting section based on historical data.
  */
-export function renderTargetCard(data, index = 0) {
-  const animDelay = index * 0.08;
-  const gridItems = Object.entries(data.values)
-    .map(
-      ([year, val]) => `
-      <div class="target-grid__item">
-        <div class="target-grid__year">Target ${year}</div>
-        <div class="target-grid__value">${val}</div>
-      </div>
-    `
-    )
-    .join('');
-
+export function renderForecastSection() {
   return `
-    <div class="rec-card" id="rec-targetPeriode" style="animation-delay: ${animDelay}s" data-field="targetPeriode">
-      <div class="rec-card__header">
-        <div class="rec-card__label">
-          <span class="rec-card__ai-icon">AI</span>
-          ${data.label}
-        </div>
-        <span class="rec-card__status rec-card__status--pending" id="status-targetPeriode">Rekomendasi AI</span>
-      </div>
-      <div class="target-grid" id="value-targetPeriode">
-        ${gridItems}
-      </div>
-      <div class="rec-card__reasoning" style="margin-top: var(--space-md);">
-        <span class="rec-card__reasoning-icon">i</span>
-        <span>${data.reasoning}</span>
-      </div>
-      <div class="rec-card__actions" id="actions-targetPeriode">
-        <button class="btn btn--success btn--sm" data-action="accept" data-field="targetPeriode">
-          Terima Semua Target
-        </button>
-        <button class="btn btn--danger btn--sm" data-action="reject" data-field="targetPeriode">
-          Tolak
+    <div class="forecast-section" id="forecast-section" style="margin-top: var(--space-xl);">
+      <div class="forecast-section__toggle">
+        <button class="btn btn--outline btn--sm" id="btn-toggle-forecast" style="width: 100%;">
+          Tampilkan Proyeksi Target dari Data Historis
         </button>
       </div>
-
-      <!-- Forecast sub-feature -->
-      <div class="forecast-section" id="forecast-section">
-        <div class="forecast-section__toggle">
-          <button class="btn btn--outline btn--sm" id="btn-toggle-forecast">
-            Proyeksi dari Data Historis
-          </button>
-        </div>
-        <div class="forecast-section__body" id="forecast-body" style="display:none;">
-          <p class="input-group__hint" style="margin-bottom: var(--space-md);">
-            Masukkan data target periode sebelumnya untuk mendapatkan proyeksi AI yang lebih akurat.
-          </p>
-          <div class="forecast-period-row">
-            <div class="input-group forecast-period-field">
-              <label class="input-group__label" for="fc-year-start">Tahun Awal</label>
-              <input type="number" id="fc-year-start" class="forecast-input" value="2021" min="2000" max="2099" />
-            </div>
-            <span class="forecast-period-separator">&ndash;</span>
-            <div class="input-group forecast-period-field">
-              <label class="input-group__label" for="fc-year-end">Tahun Akhir</label>
-              <input type="number" id="fc-year-end" class="forecast-input" value="2025" min="2000" max="2099" />
-            </div>
+      <div class="forecast-section__body" id="forecast-body" style="display:none; padding: var(--space-lg); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-top: var(--space-md); background: #fafafa;">
+        <p class="input-group__hint" style="margin-bottom: var(--space-md);">
+          Masukkan data target periode sebelumnya untuk mendapatkan proyeksi AI deterministik (Holt's Linear Trend).
+        </p>
+        <div class="forecast-period-row" style="display: flex; gap: var(--space-md); margin-bottom: var(--space-md);">
+          <div class="input-group forecast-period-field" style="flex: 1;">
+            <label class="input-group__label" for="fc-year-start">Tahun Awal</label>
+            <input type="number" id="fc-year-start" class="forecast-input" value="2021" min="2000" max="2099" />
           </div>
-          <div class="input-group">
-            <label class="input-group__label">Target per Tahun</label>
-            <div id="fc-target-fields" class="target-fields"></div>
+          <span class="forecast-period-separator" style="display: flex; align-items: center;">&ndash;</span>
+          <div class="input-group forecast-period-field" style="flex: 1;">
+            <label class="input-group__label" for="fc-year-end">Tahun Akhir</label>
+            <input type="number" id="fc-year-end" class="forecast-input" value="2025" min="2000" max="2099" />
           </div>
-          <button class="btn btn--ai btn--sm" id="btn-run-forecast" disabled>
-            Proyeksikan Target
-          </button>
-          <div id="forecast-result" style="margin-top: var(--space-lg);"></div>
         </div>
+        <div class="input-group">
+          <label class="input-group__label">Target per Tahun</label>
+          <div id="fc-target-fields" class="target-fields"></div>
+        </div>
+        <button class="btn btn--ai btn--sm" id="btn-run-forecast" disabled style="margin-top: var(--space-md);">
+          Hitung Proyeksi Target
+        </button>
+        <div id="forecast-result" style="margin-top: var(--space-lg);"></div>
       </div>
     </div>
   `;
@@ -142,7 +104,7 @@ export function initForecastSection(type, value) {
   toggleBtn.addEventListener('click', () => {
     const isHidden = body.style.display === 'none';
     body.style.display = isHidden ? 'block' : 'none';
-    toggleBtn.textContent = isHidden ? 'Sembunyikan Proyeksi' : 'Proyeksi dari Data Historis';
+    toggleBtn.textContent = isHidden ? 'Sembunyikan Proyeksi Target' : 'Tampilkan Proyeksi Target dari Data Historis';
     if (isHidden) renderFields();
   });
 
@@ -201,7 +163,7 @@ export function initForecastSection(type, value) {
       const result = await getForecastRecommendations(payload);
       resultContainer.innerHTML = renderForecastResult(result);
     } catch (err) {
-      resultContainer.innerHTML = '<p class="input-group__hint" style="color:var(--color-danger);">Gagal memproyeksikan target.</p>';
+      resultContainer.innerHTML = `<p class="input-group__hint" style="color:var(--color-danger);">Gagal memproyeksikan target: ${err.message}</p>`;
     }
 
     runBtn.disabled = false;
@@ -374,13 +336,7 @@ export function initCardActions(recommendations, onStateChange) {
       statusEl.className = 'rec-card__status rec-card__status--pending';
       statusEl.textContent = 'Rekomendasi AI';
 
-      const isTarget = field === 'targetPeriode';
-      actionsEl.innerHTML = isTarget
-        ? `
-          <button class="btn btn--success btn--sm" data-action="accept" data-field="${field}">Terima Semua Target</button>
-          <button class="btn btn--danger btn--sm" data-action="reject" data-field="${field}">Tolak</button>
-        `
-        : `
+      actionsEl.innerHTML = `
           <button class="btn btn--success btn--sm" data-action="accept" data-field="${field}">Terima</button>
           <button class="btn btn--outline btn--sm" data-action="edit" data-field="${field}">Edit</button>
           <button class="btn btn--danger btn--sm" data-action="reject" data-field="${field}">Tolak</button>

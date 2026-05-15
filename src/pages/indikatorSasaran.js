@@ -5,18 +5,18 @@ import { renderHeader } from '../components/header.js';
 import { renderSkeletonCards } from '../components/skeletonLoader.js';
 import {
   renderRecommendationCard,
-  renderTargetCard,
+  renderForecastSection,
   initCardActions,
   initForecastSection,
 } from '../components/recommendationCard.js';
-import { getRecommendations } from '../services/mockAiService.js';
+import { getRecommendations } from '../services/apiClient.js';
 
 export function renderIndikatorSasaran() {
   return `
     ${renderHeader(
-      'Indikator Sasaran',
-      'Susun indikator berdasarkan Sasaran Strategis dengan bantuan AI'
-    )}
+    'Indikator Sasaran',
+    'Susun indikator berdasarkan Sasaran Strategis dengan bantuan AI'
+  )}
     <div class="page-body">
 
       <!-- STEP 1: Input -->
@@ -96,8 +96,6 @@ export function initIndikatorSasaran() {
         html += renderRecommendationCard(key, recs[key], i);
       });
 
-      html += renderTargetCard(recs.targetPeriode, fieldOrder.length);
-
       recsContainer.innerHTML = `
         <div class="recs-section">
           <div class="recs-section__title">
@@ -105,6 +103,7 @@ export function initIndikatorSasaran() {
           </div>
           ${html}
         </div>
+        ${renderForecastSection()}
       `;
 
       initCardActions(recs);
@@ -113,7 +112,7 @@ export function initIndikatorSasaran() {
       recsContainer.innerHTML = `
         <div class="empty-state">
           <div class="empty-state__icon">!</div>
-          <div class="empty-state__text">Terjadi kesalahan saat memuat rekomendasi. Silakan coba lagi.</div>
+          <div class="empty-state__text">Gagal memuat rekomendasi: ${err.message}</div>
         </div>
       `;
     }
