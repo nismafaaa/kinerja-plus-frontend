@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Proxy all /api requests to our Netlify Function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+# Fallback for Single Page Application routing (Vite)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
