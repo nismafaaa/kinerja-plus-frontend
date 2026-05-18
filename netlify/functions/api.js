@@ -29,6 +29,7 @@ export async function handler(event, context) {
       responseHeaders[key] = value;
     }
 
+
     return {
       statusCode: response.status,
       headers: responseHeaders,
