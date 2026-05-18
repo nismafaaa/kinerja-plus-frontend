@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       open: true,
       proxy: {
         '/api': {
-          target: env.API_URL || 'http://0.0.0.0:8080',
+          target: env.API_URL,
           changeOrigin: true,
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {

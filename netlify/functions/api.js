@@ -1,5 +1,5 @@
 export async function handler(event, context) {
-  const baseUrl = process.env.API_URL || 'http://0.0.0.0:8080';
+  const baseUrl = process.env.API_URL;
   const url = new URL(event.path, baseUrl).toString();
 
   const username = process.env.API_USERNAME;
