@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           configure: (proxy, options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
-              const username = env.API_USERNAME || 'admin';
-              const password = env.API_PASSWORD || 'admin';
+              const username = env.API_USERNAME;
+              const password = env.API_PASSWORD;
               const authHeader = 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64');
               proxyReq.setHeader('Authorization', authHeader);
             });
