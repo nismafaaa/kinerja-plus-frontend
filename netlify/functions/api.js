@@ -29,6 +29,8 @@ export async function handler(event, context) {
       responseHeaders[key] = value;
     }
 
+    delete responseHeaders['content-encoding'];
+    delete responseHeaders['content-length'];
 
     return {
       statusCode: response.status,
