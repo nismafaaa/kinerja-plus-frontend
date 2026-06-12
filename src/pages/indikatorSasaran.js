@@ -1,15 +1,19 @@
-/**
- * Indikator Sasaran page.
- */
 import { renderHeader } from '../components/header.js';
 import { renderSkeletonCards } from '../components/skeletonLoader.js';
+import {
+  renderIndicatorOptions,
+  initIndicatorSelector,
+} from '../components/indicatorSelector.js';
 import {
   renderRecommendationCard,
   renderForecastSection,
   initCardActions,
   initForecastSection,
 } from '../components/recommendationCard.js';
-import { getRecommendations } from '../services/apiClient.js';
+import {
+  getIndicatorOptions,
+  getRecommendations,
+} from '../services/apiClient.js';
 
 export function renderIndikatorSasaran() {
   return `
@@ -19,8 +23,8 @@ export function renderIndikatorSasaran() {
   )}
     <div class="page-body">
 
-      <!-- STEP 1: Input -->
-      <div class="step-section" id="step-input-sasaran">
+      <!-- STEP 1: Sasaran Input -->
+      <div class="step-section" id="step-1-sasaran">
         <div class="step-label">
           <span class="step-number">1</span>
           Masukkan Sasaran Strategis
@@ -28,7 +32,8 @@ export function renderIndikatorSasaran() {
         <div class="input-group">
           <label class="input-group__label" for="input-sasaran">Sasaran Strategis</label>
           <p class="input-group__hint">
-            Ketik sasaran strategis organisasi Anda. AI akan memberikan rekomendasi indikator secara otomatis.
+            Ketik sasaran strategis organisasi Anda. AI akan menghasilkan beberapa opsi
+            <strong>Indikator Sasaran</strong> yang relevan dan terukur untuk Anda pilih.
           </p>
           <textarea
             id="input-sasaran"
@@ -36,19 +41,33 @@ export function renderIndikatorSasaran() {
           ></textarea>
         </div>
         <button class="btn btn--ai" id="btn-generate-sasaran" disabled>
-          Dapatkan Rekomendasi AI
+          Generate Indikator Sasaran
         </button>
       </div>
 
-      <!-- STEP 2: AI Recommendations -->
-      <div class="step-section" id="step-recommendations-sasaran" style="display:none;">
+      <!-- STEP 2: Select Indicator Option -->
+      <div class="step-section" id="step-2-sasaran" style="display:none;">
         <div class="step-label">
           <span class="step-number">2</span>
-          Tinjau Rekomendasi AI
+          Pilih Indikator Sasaran
         </div>
-        <p class="input-group__hint" style="margin-bottom: var(--space-lg);">
-          AI telah menganalisis sasaran strategis Anda dan memberikan rekomendasi untuk setiap field.
-          Anda dapat <strong>menerima</strong>, <strong>mengedit</strong>, atau <strong>menolak</strong> setiap rekomendasi.
+        <p class="input-group__hint step-hint">
+          AI menghasilkan beberapa opsi <strong>Indikator Sasaran</strong> berdasarkan sasaran strategis Anda.
+          Pilih satu indikator yang paling relevan untuk dilanjutkan.
+        </p>
+        <div id="indicator-options-container-sasaran"></div>
+      </div>
+
+      <!-- STEP 3: Metadata Generation -->
+      <div class="step-section" id="step-3-sasaran" style="display:none;">
+        <div class="step-label">
+          <span class="step-number">3</span>
+          Tinjau &amp; Edit Metadata Indikator
+        </div>
+        <div class="selected-indicator-banner" id="selected-banner-sasaran"></div>
+        <p class="input-group__hint step-hint">
+          AI telah menghasilkan metadata lengkap untuk indikator terpilih.
+          Anda dapat <strong>menerima</strong>, <strong>mengedit</strong>, atau <strong>menolak</strong> setiap field.
         </p>
         <div id="recs-container-sasaran"></div>
       </div>
@@ -60,64 +79,133 @@ export function renderIndikatorSasaran() {
 export function initIndikatorSasaran() {
   const input = document.getElementById('input-sasaran');
   const btn = document.getElementById('btn-generate-sasaran');
-  const recsSection = document.getElementById('step-recommendations-sasaran');
+  const step2 = document.getElementById('step-2-sasaran');
+  const step3 = document.getElementById('step-3-sasaran');
+  const optionsContainer = document.getElementById('indicator-options-container-sasaran');
   const recsContainer = document.getElementById('recs-container-sasaran');
+  const selectedBanner = document.getElementById('selected-banner-sasaran');
 
   if (!input || !btn) return;
+
+  let currentInputText = '';
+  let currentSelectedIndicator = '';
 
   input.addEventListener('input', () => {
     btn.disabled = input.value.trim().length < 5;
   });
 
-  btn.addEventListener('click', async () => {
-    const inputText = input.value.trim();
-    if (!inputText) return;
+  async function generateOptions() {
+    currentInputText = input.value.trim();
+    if (!currentInputText) return;
 
-    recsSection.style.display = 'block';
-    recsContainer.innerHTML = renderSkeletonCards(6);
+    step2.style.display = 'block';
+    step3.style.display = 'none';
+    optionsContainer.innerHTML = renderSkeletonIndicators(4);
     btn.disabled = true;
     btn.innerHTML = 'Menganalisis...';
 
-    recsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-      const recs = await getRecommendations('sasaran', inputText);
+      const options = await getIndicatorOptions('sasaran', currentInputText);
 
-      let html = '';
+      optionsContainer.innerHTML = renderIndicatorOptions(options, 'sasaran');
+      initIndicatorSelector(
+        (selectedName) => generateMetadata(selectedName)
+      );
+    } catch (err) {
+      optionsContainer.innerHTML = errorState(err.message);
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = 'Generate Indikator Sasaran';
+  }
+
+  btn.addEventListener('click', generateOptions);
+
+  async function generateMetadata(selectedName) {
+    currentSelectedIndicator = selectedName;
+    step3.style.display = 'block';
+    selectedBanner.innerHTML = `
+      <div class="selected-indicator-banner__icon">✓</div>
+      <div class="selected-indicator-banner__content">
+        <div class="selected-indicator-banner__title">Indikator Terpilih</div>
+        <div class="selected-indicator-banner__value">${selectedName}</div>
+      </div>
+      <button class="btn btn--outline btn--sm" id="btn-change-indicator-sasaran">Ganti Indikator</button>
+    `;
+
+    recsContainer.innerHTML = renderSkeletonCards(7);
+    step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('btn-change-indicator-sasaran')?.addEventListener('click', () => {
+      step3.style.display = 'none';
+      step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    try {
+      const recs = await getRecommendations('sasaran', currentInputText, selectedName);
+
       const fieldOrder = [
         'uraianIndikator',
         'indikatorMinimum',
         'definisiOperasional',
         'rumusHitung',
+        'satuan',
         'sumberData',
+        'frekuensiPengukuran',
       ];
 
+      let html = '';
       fieldOrder.forEach((key, i) => {
-        html += renderRecommendationCard(key, recs[key], i);
+        if (recs[key]) {
+          html += renderRecommendationCard(key, recs[key], i, { readOnly: key === 'uraianIndikator' });
+        }
       });
 
       recsContainer.innerHTML = `
         <div class="recs-section">
-          <div class="recs-section__title">
-            Rekomendasi AI untuk Sasaran Anda
-          </div>
+          <div class="recs-section__title">Metadata Indikator Sasaran</div>
           ${html}
         </div>
         ${renderForecastSection()}
       `;
 
-      initCardActions(recs);
-      initForecastSection('sasaran', inputText);
-    } catch (err) {
-      recsContainer.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state__icon">!</div>
-          <div class="empty-state__text">Gagal memuat rekomendasi: ${err.message}</div>
-        </div>
-      `;
-    }
+      const regenCounters = {};
 
-    btn.disabled = false;
-    btn.innerHTML = 'Dapatkan Rekomendasi AI';
-  });
+      initCardActions(recs, null, async (fieldKey) => {
+        regenCounters[fieldKey] = (regenCounters[fieldKey] || 0) + 1;
+        const variantIndicator = `${currentSelectedIndicator} - variasi ${regenCounters[fieldKey]}`;
+        const freshRecs = await getRecommendations('sasaran', currentInputText, variantIndicator);
+        if (!freshRecs[fieldKey]) throw new Error('Field tidak ditemukan dalam respons API');
+        return freshRecs[fieldKey];
+      });
+      initForecastSection('sasaran', currentInputText);
+    } catch (err) {
+      recsContainer.innerHTML = errorState(err.message);
+    }
+  }
+}
+
+function renderSkeletonIndicators(count = 4) {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += `
+      <div class="skeleton-card indicator-option-skeleton" style="animation-delay:${i * 0.1}s">
+        <div class="skeleton skeleton-line--short" style="height:14px;margin-bottom:12px;"></div>
+        <div class="skeleton skeleton-line--full" style="height:12px;margin-bottom:8px;"></div>
+        <div class="skeleton skeleton-line--medium" style="height:12px;"></div>
+      </div>
+    `;
+  }
+  return `<div class="indicator-options-grid">${html}</div>`;
+}
+
+function errorState(message) {
+  return `
+    <div class="empty-state">
+      <div class="empty-state__icon">!</div>
+      <div class="empty-state__text">Gagal memuat: ${message}</div>
+    </div>
+  `;
 }

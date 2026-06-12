@@ -1,8 +1,3 @@
-/**
- * Recommendation card component with Accept / Edit / Reject actions.
- *
- * Each card has a unique ID based on fieldKey to manage state.
- */
 import { getForecastRecommendations } from '../services/apiClient.js';
 
 /**
@@ -10,63 +5,69 @@ import { getForecastRecommendations } from '../services/apiClient.js';
  * @param {string} fieldKey - Unique key (e.g. 'uraianIndikator')
  * @param {object} data - { label, value, reasoning }
  * @param {number} index - Animation delay index
+ * @param {object} [options] - Optional flags
+ * @param {boolean} [options.readOnly] - If true, hides edit/accept/reject actions
  */
-export function renderRecommendationCard(fieldKey, data, index = 0) {
+export function renderRecommendationCard(fieldKey, data, index = 0, options = {}) {
+  const { readOnly = false } = options;
   const animDelay = index * 0.08;
   return `
-    <div class="rec-card" id="rec-${fieldKey}" style="animation-delay: ${animDelay}s" data-field="${fieldKey}">
+    <div class="rec-card${readOnly ? ' rec-card--readonly' : ''}" id="rec-${fieldKey}" style="animation-delay: ${animDelay}s" data-field="${fieldKey}">
       <div class="rec-card__header">
         <div class="rec-card__label">
           <span class="rec-card__ai-icon">AI</span>
           ${data.label}
         </div>
-        <span class="rec-card__status rec-card__status--pending" id="status-${fieldKey}">Rekomendasi AI</span>
+        <span class="rec-card__status ${readOnly ? 'rec-card__status--accepted' : 'rec-card__status--pending'}" id="status-${fieldKey}">${readOnly ? 'Terpilih' : 'Rekomendasi AI'}</span>
       </div>
       <div class="rec-card__value" id="value-${fieldKey}">${data.value}</div>
-      <div class="rec-card__reasoning">
-        <span class="rec-card__reasoning-icon">i</span>
-        <span>${data.reasoning}</span>
-      </div>
-      <div class="rec-card__edit-area" id="edit-area-${fieldKey}" style="display:none;">
-        <textarea id="edit-input-${fieldKey}">${data.value}</textarea>
-      </div>
-      <div class="rec-card__actions" id="actions-${fieldKey}">
-        <button class="btn btn--success btn--sm" data-action="accept" data-field="${fieldKey}">
-          Terima
-        </button>
-        <button class="btn btn--outline btn--sm" data-action="edit" data-field="${fieldKey}">
-          Edit
-        </button>
-        <button class="btn btn--danger btn--sm" data-action="reject" data-field="${fieldKey}">
-          Tolak
-        </button>
-      </div>
+      ${!readOnly ? `
+        <div class="rec-card__reasoning">
+          <span class="rec-card__reasoning-icon">i</span>
+          <span>${data.reasoning}</span>
+        </div>
+        <div class="rec-card__edit-area" id="edit-area-${fieldKey}" style="display:none;">
+          <textarea id="edit-input-${fieldKey}">${data.value}</textarea>
+        </div>
+        <div class="rec-card__actions" id="actions-${fieldKey}">
+          <button class="btn btn--success btn--sm" data-action="accept" data-field="${fieldKey}">Terima</button>
+          <button class="btn btn--outline btn--sm" data-action="edit" data-field="${fieldKey}">Edit</button>
+          <button class="btn btn--danger btn--sm" data-action="reject" data-field="${fieldKey}">Tolak</button>
+        </div>
+      ` : ''}
     </div>
   `;
 }
 
-/**
- * Render the standalone forecasting section based on historical data.
- */
 export function renderForecastSection() {
   return `
-    <div class="forecast-section" id="forecast-section" style="margin-top: var(--space-xl);">
-      <div class="forecast-section__toggle">
-        <button class="btn btn--outline btn--sm" id="btn-toggle-forecast" style="width: 100%;">
-          Tampilkan Proyeksi Target dari Data Historis
+    <div class="forecast-section" id="forecast-section">
+      <!-- CTA Card -->
+      <div class="forecast-cta" id="forecast-cta">
+        <div class="forecast-cta__icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+            <polyline points="16 7 22 7 22 13"/>
+          </svg>
+        </div>
+        <div class="forecast-cta__text">
+          <div class="forecast-cta__title">Proyeksi Target dari Data Historis</div>
+          <div class="forecast-cta__desc">Masukkan data historis untuk mendapatkan proyeksi target menggunakan metode Holt's Linear Trend secara deterministik.</div>
+        </div>
+        <button class="btn btn--forecast" id="btn-toggle-forecast">
+          Hitung Proyeksi
         </button>
       </div>
-      <div class="forecast-section__body" id="forecast-body" style="display:none; padding: var(--space-lg); border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-top: var(--space-md); background: #fafafa;">
-        <p class="input-group__hint" style="margin-bottom: var(--space-md);">
-          Masukkan data target periode sebelumnya untuk mendapatkan proyeksi AI deterministik (Holt's Linear Trend).
-        </p>
-        <div class="forecast-period-row" style="display: flex; gap: var(--space-md); margin-bottom: var(--space-md);">
-          <div class="input-group forecast-period-field" style="flex: 1;">
+
+      <!-- Expandable body -->
+      <div class="forecast-section__body" id="forecast-body" style="display:none;">
+        <div class="forecast-period-row">
+          <div class="input-group forecast-period-field">
             <label class="input-group__label" for="fc-year-start">Tahun Awal</label>
             <input type="number" id="fc-year-start" class="forecast-input" value="2021" min="2000" max="2099" />
           </div>
-          <span class="forecast-period-separator" style="display: flex; align-items: center;">&ndash;</span>
-          <div class="input-group forecast-period-field" style="flex: 1;">
+          <span class="forecast-period-separator">&ndash;</span>
+          <div class="input-group forecast-period-field">
             <label class="input-group__label" for="fc-year-end">Tahun Akhir</label>
             <input type="number" id="fc-year-end" class="forecast-input" value="2025" min="2000" max="2099" />
           </div>
@@ -100,7 +101,6 @@ export function initForecastSection(type, value) {
 
   if (!toggleBtn || !body) return;
 
-  // Toggle visibility
   toggleBtn.addEventListener('click', () => {
     const isHidden = body.style.display === 'none';
     body.style.display = isHidden ? 'block' : 'none';
@@ -137,14 +137,12 @@ export function initForecastSection(type, value) {
   yearEnd.addEventListener('change', renderFields);
   fieldsContainer.addEventListener('input', validateForecast);
 
-  // Run forecast
   runBtn.addEventListener('click', async () => {
     const start = parseInt(yearStart.value, 10);
     const end = parseInt(yearEnd.value, 10);
     const inputs = fieldsContainer.querySelectorAll('.fc-value-input');
     const previousTargets = Array.from(inputs).map((inp) => parseFloat(inp.value) || 0);
 
-    // Build payload based on page type
     const payload = {
       previous_period: `${start}-${end}`,
       previous_targets: previousTargets,
@@ -171,9 +169,6 @@ export function initForecastSection(type, value) {
   });
 }
 
-/**
- * Render forecast result HTML.
- */
 function renderForecastResult(result) {
   const { previousPeriod, forecastedPeriod, trendAnalysis } = result;
 
@@ -232,13 +227,15 @@ function renderForecastResult(result) {
 
 /**
  * Initialize action button handlers for all recommendation cards.
- * Manages accept/edit/reject state transitions.
+ * Manages accept / edit / reject-and-regenerate state transitions.
  *
  * @param {object} recommendations - Full recommendation data
- * @param {function} onStateChange - Callback when any card changes state
+ * @param {function|null} onStateChange - Callback when any card changes state
+ * @param {function(fieldKey: string): Promise<object>} onRegenerate
+ *   Called when the user rejects a field. Must return a Promise that resolves
+ *   to a fresh { label, value, reasoning } object for that field.
  */
-export function initCardActions(recommendations, onStateChange) {
-  // Track state per field
+export function initCardActions(recommendations, onStateChange, onRegenerate) {
   const state = {};
   const fieldKeys = Object.keys(recommendations);
   fieldKeys.forEach((key) => {
@@ -316,18 +313,60 @@ export function initCardActions(recommendations, onStateChange) {
     }
 
     if (action === 'reject') {
-      state[field].status = 'rejected';
-      card.classList.add('rec-card--rejected');
-      statusEl.className = 'rec-card__status';
-      statusEl.textContent = 'Ditolak';
-
-      actionsEl.innerHTML = `
-        <button class="btn btn--outline btn--sm" data-action="undo" data-field="${field}">
-          Kembalikan
-        </button>
+      card.classList.remove('rec-card--accepted', 'rec-card--rejected');
+      card.style.pointerEvents = 'none';
+      card.innerHTML = `
+        <div class="rec-card__header">
+          <div class="rec-card__label">
+            <span class="rec-card__ai-icon">AI</span>
+            ${recommendations[field]?.label || field}
+          </div>
+          <span class="rec-card__status rec-card__status--pending">Memperbarui...</span>
+        </div>
+        <div class="skeleton skeleton-block" style="height:56px;margin-bottom:var(--space-md);"></div>
+        <div class="skeleton skeleton-line--medium" style="height:12px;margin-bottom:var(--space-lg);"></div>
+        <div class="skeleton-actions">
+          <div class="skeleton skeleton-btn"></div>
+          <div class="skeleton skeleton-btn"></div>
+          <div class="skeleton skeleton-btn"></div>
+        </div>
       `;
 
-      showToast('Rekomendasi ditolak', 'info');
+      if (onRegenerate) {
+        onRegenerate(field)
+          .then((newData) => {
+            state[field] = { status: 'pending', value: newData.value || '' };
+            const temp = document.createElement('div');
+            temp.innerHTML = renderRecommendationCard(field, newData, 0);
+            const newCard = temp.firstElementChild;
+            card.replaceWith(newCard);
+            showToast('Rekomendasi diperbarui', 'success');
+          })
+          .catch((err) => {
+            const originalData = recommendations[field];
+            card.innerHTML = `
+              <div class="rec-card__header">
+                <div class="rec-card__label">
+                  <span class="rec-card__ai-icon">AI</span>
+                  ${originalData?.label || field}
+                </div>
+                <span class="rec-card__status rec-card__status--pending" id="status-${field}">Rekomendasi AI</span>
+              </div>
+              <div class="rec-card__value" id="value-${field}">${state[field].value}</div>
+              <div class="rec-card__reasoning">
+                <span class="rec-card__reasoning-icon">i</span>
+                <span>Gagal memperbarui: ${err.message}. Silakan coba tolak kembali.</span>
+              </div>
+              <div class="rec-card__actions" id="actions-${field}">
+                <button class="btn btn--success btn--sm" data-action="accept" data-field="${field}">Terima</button>
+                <button class="btn btn--outline btn--sm" data-action="edit" data-field="${field}">Edit</button>
+                <button class="btn btn--danger btn--sm" data-action="reject" data-field="${field}">Tolak</button>
+              </div>
+            `;
+            card.style.pointerEvents = 'auto';
+            showToast('Gagal memperbarui rekomendasi', 'error');
+          });
+      }
     }
 
     if (action === 'undo') {
@@ -337,10 +376,10 @@ export function initCardActions(recommendations, onStateChange) {
       statusEl.textContent = 'Rekomendasi AI';
 
       actionsEl.innerHTML = `
-          <button class="btn btn--success btn--sm" data-action="accept" data-field="${field}">Terima</button>
-          <button class="btn btn--outline btn--sm" data-action="edit" data-field="${field}">Edit</button>
-          <button class="btn btn--danger btn--sm" data-action="reject" data-field="${field}">Tolak</button>
-        `;
+        <button class="btn btn--success btn--sm" data-action="accept" data-field="${field}">Terima</button>
+        <button class="btn btn--outline btn--sm" data-action="edit" data-field="${field}">Edit</button>
+        <button class="btn btn--danger btn--sm" data-action="reject" data-field="${field}">Tolak</button>
+      `;
     }
 
     if (onStateChange) onStateChange(state);
@@ -349,9 +388,6 @@ export function initCardActions(recommendations, onStateChange) {
   return state;
 }
 
-/**
- * Show a temporary toast notification.
- */
 function showToast(message, type = 'info') {
   document.querySelectorAll('.toast').forEach((t) => t.remove());
 

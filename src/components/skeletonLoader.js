@@ -1,6 +1,3 @@
-/**
- * Skeleton loader for recommendation cards (shown during AI loading).
- */
 export function renderSkeletonCards(count = 6) {
   let html = '';
   for (let i = 0; i < count; i++) {

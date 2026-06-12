@@ -1,6 +1,3 @@
-/**
- * Sidebar navigation component.
- */
 export function renderSidebar(activePage) {
   return `
     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu">&#9776;</button>
@@ -37,9 +34,6 @@ export function renderSidebar(activePage) {
   `;
 }
 
-/**
- * Attach mobile sidebar toggle handlers.
- */
 export function initSidebarToggle() {
   const toggle = document.getElementById('sidebar-toggle');
   const sidebar = document.getElementById('sidebar');

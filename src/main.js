@@ -1,6 +1,3 @@
-/**
- * Main entry point — SPA router for Kinerja Plus AI Prototype.
- */
 import './styles/index.css';
 import './styles/components.css';
 import './styles/pages.css';
@@ -17,9 +14,6 @@ import {
 
 const app = document.getElementById('app');
 
-/**
- * Simple hash-based router.
- */
 function getRoute() {
   const hash = window.location.hash || '#/indikator-tujuan';
   if (hash.includes('indikator-sasaran')) return 'sasaran';
@@ -47,10 +41,8 @@ function render() {
     </main>
   `;
 
-  // Initialize sidebar toggle (mobile)
   initSidebarToggle();
 
-  // Initialize page-specific logic
   if (route === 'sasaran') {
     initIndikatorSasaran();
   } else {
@@ -58,8 +50,6 @@ function render() {
   }
 }
 
-// Listen for hash changes
 window.addEventListener('hashchange', render);
 
-// Initial render
 render();
