@@ -26,9 +26,9 @@ export async function getHealth() {
 }
 
 /**
- * Generate 4 indicator name candidates from a tujuan / sasaran statement.
+ * Generate 4 indicator name candidates from a planning entity statement.
  *
- * @param {'tujuan'|'sasaran'} type
+ * @param {'tujuan'|'sasaran'|'program'|'kegiatan'|'sub_kegiatan'} type
  * @param {string} inputText
  * @returns {Promise<string[]>}
  */
@@ -46,8 +46,8 @@ export async function getIndicatorOptions(type, inputText) {
 /**
  * Generate full metadata for the selected indicator.
  *
- * @param {'tujuan'|'sasaran'} type
- * @param {string} inputText           Original tujuan/sasaran statement
+ * @param {'tujuan'|'sasaran'|'program'|'kegiatan'|'sub_kegiatan'} type
+ * @param {string} inputText           Original planning entity statement
  * @param {string} selectedIndicator   Chosen indicator name from Step 1
  * @returns {Promise<object>}
  */

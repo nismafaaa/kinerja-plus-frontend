@@ -1,4 +1,29 @@
-export function renderSidebar(activePage) {
+import { ENTITY_CONFIG } from '../config/entities.js';
+
+export function renderSidebar(activeType) {
+  const navItems = Object.values(ENTITY_CONFIG)
+    .map((cfg) => {
+      const isActive = cfg.type === activeType;
+      // Visual hierarchy: indent each level 12px deeper
+      const indent = cfg.hierarchyLevel * 12;
+      // Connector line visual for sub-levels
+      const connector = cfg.hierarchyLevel > 0
+        ? `<span class="sidebar__nav-connector" aria-hidden="true"></span>`
+        : '';
+      return `
+        <a href="${cfg.hash}"
+           class="sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''} sidebar__nav-item--level-${cfg.hierarchyLevel}"
+           id="nav-${cfg.type}"
+           style="padding-left: calc(var(--space-md) + ${indent}px)"
+        >
+          ${connector}
+          <span class="sidebar__nav-icon">&#8226;</span>
+          ${cfg.navLabel}
+        </a>
+      `;
+    })
+    .join('');
+
   return `
     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle menu">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -14,18 +39,7 @@ export function renderSidebar(activePage) {
       </div>
       <nav class="sidebar__nav">
         <div class="sidebar__section-label">Modul Perencanaan</div>
-        <a href="#/indikator-tujuan"
-           class="sidebar__nav-item ${activePage === 'tujuan' ? 'sidebar__nav-item--active' : ''}"
-           id="nav-tujuan">
-          <span class="sidebar__nav-icon">&bull;</span>
-          Indikator Tujuan
-        </a>
-        <a href="#/indikator-sasaran"
-           class="sidebar__nav-item ${activePage === 'sasaran' ? 'sidebar__nav-item--active' : ''}"
-           id="nav-sasaran">
-          <span class="sidebar__nav-icon">&bull;</span>
-          Indikator Sasaran
-        </a>
+        ${navItems}
       </nav>
       <div class="sidebar__footer">
         <div class="sidebar__footer-text">IPVS — Intelligent Planning<br>Validation System</div>

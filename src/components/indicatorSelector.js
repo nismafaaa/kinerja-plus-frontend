@@ -2,10 +2,10 @@
  * Render a grid of selectable indicator option cards.
  *
  * @param {string[]} options  - Array of indicator name strings from the API
- * @param {'tujuan'|'sasaran'} type - used for aria labels
+ * @param {string}   label    - Human-readable entity label (e.g. 'Tujuan', 'Sub Kegiatan')
  */
-export function renderIndicatorOptions(options, type) {
-  const typeName = type === 'tujuan' ? 'Indikator Tujuan' : 'Indikator Sasaran';
+export function renderIndicatorOptions(options, label) {
+  const typeName = `Indikator ${label}`;
 
   const cards = options
     .map(

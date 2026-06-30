@@ -110,6 +110,35 @@
   text-align: center;
 }
 
+/* ── Hierarchy connector lines ─────────────────────────────── */
+.sidebar__nav-connector {
+  position: relative;
+  width: 1px;
+  flex-shrink: 0;
+  /* Drawn as a ::before on the item — uses border-left to show depth line */
+}
+
+/* Each indented item gets a subtle left border connector from parent */
+.sidebar__nav-item--level-1,
+.sidebar__nav-item--level-2,
+.sidebar__nav-item--level-3,
+.sidebar__nav-item--level-4 {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  margin-left: 12px;
+}
+
+.sidebar__nav-item--level-2 { margin-left: 20px; }
+.sidebar__nav-item--level-3 { margin-left: 28px; }
+.sidebar__nav-item--level-4 { margin-left: 36px; }
+
+/* Slightly smaller text for deeper levels to reinforce hierarchy */
+.sidebar__nav-item--level-3,
+.sidebar__nav-item--level-4 {
+  font-size: calc(var(--font-size-sm) - 0.5px);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+
 .sidebar-toggle {
   display: none;
   position: fixed;

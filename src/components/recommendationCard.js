@@ -87,10 +87,13 @@ export function renderForecastSection() {
 
 /**
  * Initialize the forecast sub-feature inside the target card.
- * @param {'tujuan' | 'sasaran'} type - Which page is calling
- * @param {string} value - The user's input text
+ *
+ * @param {string} forecastContextKey - The exact field key to send to POST /api/v1/forecast.
+ *   Must be one of: 'tujuan' | 'sasaran_strategis' | 'program' | 'kegiatan' | 'sub_kegiatan'.
+ *   Comes from EntityConfig.forecastContextKey.
+ * @param {string} value - The user's input text (the planning entity statement)
  */
-export function initForecastSection(type, value) {
+export function initForecastSection(forecastContextKey, value) {
   const toggleBtn = document.getElementById('btn-toggle-forecast');
   const body = document.getElementById('forecast-body');
   const yearStart = document.getElementById('fc-year-start');
@@ -147,11 +150,9 @@ export function initForecastSection(type, value) {
       previous_period: `${start}-${end}`,
       previous_targets: previousTargets,
     };
-    if (type === 'tujuan') {
-      payload.tujuan = value;
-    } else {
-      payload.sasaran_strategis = value;
-    }
+    // Dynamically set the context field — supports all 5 entity types:
+    // tujuan | sasaran_strategis | program | kegiatan | sub_kegiatan
+    payload[forecastContextKey] = value;
 
     runBtn.disabled = true;
     runBtn.innerHTML = 'Menganalisis...';
