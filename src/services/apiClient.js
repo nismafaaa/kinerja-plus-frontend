@@ -26,39 +26,64 @@ export async function getHealth() {
 }
 
 /**
- * Generate 4 indicator name candidates from a planning entity statement.
+ * Step 1: get a single AI-recommended indicator name + reasoning for a
+ * planning entity's context text.
  *
  * @param {'tujuan'|'sasaran'|'program'|'kegiatan'|'sub_kegiatan'} type
- * @param {string} inputText
- * @returns {Promise<string[]>}
+ * @param {string} contextText
+ * @returns {Promise<{type: string, context_text: string, indicator: string, reasoning: string}>}
  */
-export async function getIndicatorOptions(type, inputText) {
-  const response = await fetch('/api/v1/recommendations/indicators', {
+export async function getIndicatorRecommendation(type, contextText) {
+  const response = await fetch('/api/v1/recommendations/indicator', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, input_text: inputText }),
+    body: JSON.stringify({
+      type,
+      context_text: contextText,
+    }),
   });
 
-  const data = await handleResponse(response);
-  return data.indicators; // string[]
+  return handleResponse(response);
 }
 
 /**
- * Generate full metadata for the selected indicator.
+ * Step 2: assess the current indicator text against the 4 SMART criteria.
  *
  * @param {'tujuan'|'sasaran'|'program'|'kegiatan'|'sub_kegiatan'} type
- * @param {string} inputText           Original planning entity statement
- * @param {string} selectedIndicator   Chosen indicator name from Step 1
+ * @param {string} contextText
+ * @param {string} indicator
  * @returns {Promise<object>}
  */
-export async function getRecommendations(type, inputText, selectedIndicator) {
+export async function getSmartAssessment(type, contextText, indicator) {
+  const response = await fetch('/api/v1/recommendations/smart-assessment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type,
+      context_text: contextText,
+      indicator,
+    }),
+  });
+
+  return handleResponse(response);
+}
+
+/**
+ * Step 3: generate full metadata for the selected indicator.
+ *
+ * @param {'tujuan'|'sasaran'|'program'|'kegiatan'|'sub_kegiatan'} type
+ * @param {string} contextText           Original planning entity statement
+ * @param {string} indicator             Final indicator name (Step 1 output, edited, or custom)
+ * @returns {Promise<object>}
+ */
+export async function getIndicatorDetails(type, contextText, indicator) {
   const response = await fetch('/api/v1/recommendations/details', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       type,
-      input_text: inputText,
-      selected_indicator: selectedIndicator,
+      context_text: contextText,
+      indicator,
     }),
   });
 

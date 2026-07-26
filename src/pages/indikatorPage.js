@@ -1,16 +1,25 @@
 import { renderHeader } from '../components/header.js';
 import { renderSkeletonCards } from '../components/skeletonLoader.js';
 import {
-  renderIndicatorOptions,
-  initIndicatorSelector,
-} from '../components/indicatorSelector.js';
+  renderIndicatorAssessment,
+  initIndicatorAssessment,
+  renderSkeletonAssessment,
+  setKesesuaianLoading,
+  setKesesuaianError,
+  setKesesuaianResult,
+} from '../components/indicatorAssessment.js';
 import {
   renderRecommendationCard,
   renderForecastSection,
   initCardActions,
   initForecastSection,
 } from '../components/recommendationCard.js';
-import { getIndicatorOptions, getRecommendations } from '../services/apiClient.js';
+import { renderAiAssistedField, initAiAssistedField } from '../components/aiAssistedField.js';
+import {
+  getIndicatorRecommendation,
+  getSmartAssessment,
+  getIndicatorDetails,
+} from '../services/apiClient.js';
 import { FIELD_ORDER } from '../config/entities.js';
 
 /**
@@ -34,8 +43,8 @@ export function renderIndikatorPage(config) {
         <div class="input-group">
           <label class="input-group__label" for="input-${t}">${config.inputLabel}</label>
           <p class="input-group__hint">
-            Ketik ${config.inputLabel.toLowerCase()} yang ingin Anda analisis. AI akan menghasilkan
-            beberapa opsi <strong>Indikator ${config.label}</strong> yang relevan dan terukur untuk Anda pilih.
+            Ketik ${config.inputLabel.toLowerCase()} yang ingin Anda analisis. AI akan menyusun
+            rekomendasi <strong>Indikator ${config.label}</strong> yang relevan dan terukur untuk Anda tinjau.
           </p>
           <textarea
             id="input-${t}"
@@ -47,30 +56,18 @@ export function renderIndikatorPage(config) {
         </button>
       </div>
 
-      <!-- STEP 2: Select Indicator Option -->
+      <!-- STEP 2: Indicator + full metadata, all visible at once -->
       <div class="step-section" id="step-2-${t}" style="display:none;">
         <div class="step-label">
           <span class="step-number">2</span>
-          Pilih Indikator ${config.label}
+          Lengkapi Metadata Indikator ${config.label}
         </div>
         <p class="input-group__hint step-hint">
-          AI menghasilkan beberapa opsi <strong>Indikator ${config.label}</strong> berdasarkan
-          ${config.inputLabel.toLowerCase()} Anda. Pilih satu indikator yang paling relevan untuk dilanjutkan.
+          AI menyusun satu rekomendasi <strong>Indikator ${config.label}</strong> berdasarkan
+          ${config.inputLabel.toLowerCase()} Anda. Terima, sesuaikan, atau ganti dengan indikator Anda sendiri —
+          field metadata di bawah akan terisi mengikuti indikator ini.
         </p>
-        <div id="indicator-options-container-${t}"></div>
-      </div>
-
-      <!-- STEP 3: Metadata Generation -->
-      <div class="step-section" id="step-3-${t}" style="display:none;">
-        <div class="step-label">
-          <span class="step-number">3</span>
-          Tinjau &amp; Edit Metadata Indikator
-        </div>
-        <div class="selected-indicator-banner" id="selected-banner-${t}"></div>
-        <p class="input-group__hint step-hint">
-          AI telah menghasilkan metadata lengkap untuk indikator terpilih.
-          Anda dapat <strong>menerima</strong>, <strong>mengedit</strong>, atau <strong>menolak</strong> setiap field.
-        </p>
+        <div id="indicator-field-container-${t}"></div>
         <div id="recs-container-${t}"></div>
       </div>
 
@@ -89,40 +86,57 @@ export function initIndikatorPage(config) {
   const input = document.getElementById(`input-${t}`);
   const btn = document.getElementById(`btn-generate-${t}`);
   const step2 = document.getElementById(`step-2-${t}`);
-  const step3 = document.getElementById(`step-3-${t}`);
-  const optionsContainer = document.getElementById(`indicator-options-container-${t}`);
+  const indicatorFieldContainer = document.getElementById(`indicator-field-container-${t}`);
   const recsContainer = document.getElementById(`recs-container-${t}`);
-  const selectedBanner = document.getElementById(`selected-banner-${t}`);
 
   if (!input || !btn) return;
 
   let currentInputText = '';
   let currentSelectedIndicator = '';
 
+  // Fields other than Uraian Indikator, in display order
+  const metadataFieldOrder = FIELD_ORDER.filter((key) => key !== 'uraianIndikator');
+
+  // These render as an empty field + AI suggestion card (no accept/edit/reject);
+  // the rest keep the existing accept/edit/reject rec-card pattern.
+  const AI_ASSISTED_FIELDS = new Set(['sasaranStrategis', 'definisiOperasional', 'rumusHitung', 'sumberData']);
+
   // Enable/disable generate button based on minimum text length
   input.addEventListener('input', () => {
     btn.disabled = input.value.trim().length < 5;
   });
 
-  // ─── Step 1 → Step 2: generate indicator candidates ──────────────────────
+  // ─── Step 1 → Step 2: recommend one indicator, then auto-fill metadata ──
   async function generateOptions() {
     currentInputText = input.value.trim();
     if (!currentInputText) return;
 
     step2.style.display = 'block';
-    step3.style.display = 'none';
-    optionsContainer.innerHTML = renderSkeletonIndicators(4);
+    indicatorFieldContainer.innerHTML = renderSkeletonAssessment();
+    recsContainer.innerHTML = renderSkeletonCards(metadataFieldOrder.length);
     btn.disabled = true;
     btn.innerHTML = 'Menganalisis...';
 
     step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
-      const options = await getIndicatorOptions(config.type, currentInputText);
-      optionsContainer.innerHTML = renderIndicatorOptions(options, config.label);
-      initIndicatorSelector((selectedName) => generateMetadata(selectedName));
+      const { indicator: recommendedText, reasoning } = await getIndicatorRecommendation(
+        config.type,
+        currentInputText
+      );
+      indicatorFieldContainer.innerHTML = renderIndicatorAssessment(recommendedText, reasoning, config.label, t);
+      initIndicatorAssessment({
+        namespace: t,
+        recommendedText,
+        onUpdateMetadata: (finalText) => generateMetadata(finalText),
+      });
+
+      // All metadata fields are already visible (as skeletons) — auto-fill
+      // them immediately using the AI's recommended indicator text, along
+      // with the real SMART assessment for that indicator.
+      await generateMetadata(recommendedText);
     } catch (err) {
-      optionsContainer.innerHTML = errorState(err.message);
+      indicatorFieldContainer.innerHTML = errorState(err.message);
     }
 
     btn.disabled = false;
@@ -131,37 +145,26 @@ export function initIndikatorPage(config) {
 
   btn.addEventListener('click', generateOptions);
 
-  // ─── Step 2 → Step 3: generate full metadata ─────────────────────────────
+  // ─── Fetch/refresh the metadata fields + SMART assessment for a given
+  // indicator text ───────────────────────────────────────────────────────
   async function generateMetadata(selectedName) {
     currentSelectedIndicator = selectedName;
-    step3.style.display = 'block';
+    recsContainer.innerHTML = renderSkeletonCards(metadataFieldOrder.length);
+    setKesesuaianLoading(t);
 
-    selectedBanner.innerHTML = `
-      <div class="selected-indicator-banner__icon">✓</div>
-      <div class="selected-indicator-banner__content">
-        <div class="selected-indicator-banner__title">Indikator Terpilih</div>
-        <div class="selected-indicator-banner__value">${selectedName}</div>
-      </div>
-      <button class="btn btn--outline btn--sm" id="btn-change-indicator-${t}">Ganti Indikator</button>
-    `;
-
-    recsContainer.innerHTML = renderSkeletonCards(8);
-    step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    document.getElementById(`btn-change-indicator-${t}`)?.addEventListener('click', () => {
-      step3.style.display = 'none';
-      step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
+    getSmartAssessment(config.type, currentInputText, selectedName)
+      .then((assessment) => setKesesuaianResult(t, assessment))
+      .catch((err) => setKesesuaianError(t, err.message));
 
     try {
-      const recs = await getRecommendations(config.type, currentInputText, selectedName);
+      const recs = await getIndicatorDetails(config.type, currentInputText, selectedName);
 
       let html = '';
-      FIELD_ORDER.forEach((key, i) => {
+      metadataFieldOrder.forEach((key, i) => {
         if (recs[key]) {
-          html += renderRecommendationCard(key, recs[key], i, {
-            readOnly: key === 'uraianIndikator',
-          });
+          html += AI_ASSISTED_FIELDS.has(key)
+            ? renderAiAssistedField(key, recs[key], t)
+            : renderRecommendationCard(key, recs[key], i);
         }
       });
 
@@ -178,9 +181,15 @@ export function initIndikatorPage(config) {
       initCardActions(recs, null, async (fieldKey) => {
         regenCounters[fieldKey] = (regenCounters[fieldKey] || 0) + 1;
         const variantIndicator = `${currentSelectedIndicator} - variasi ${regenCounters[fieldKey]}`;
-        const freshRecs = await getRecommendations(config.type, currentInputText, variantIndicator);
+        const freshRecs = await getIndicatorDetails(config.type, currentInputText, variantIndicator);
         if (!freshRecs[fieldKey]) throw new Error('Field tidak ditemukan dalam respons API');
         return freshRecs[fieldKey];
+      });
+
+      metadataFieldOrder.forEach((key) => {
+        if (recs[key] && AI_ASSISTED_FIELDS.has(key)) {
+          initAiAssistedField(key, recs[key], t);
+        }
       });
 
       // Pass forecastContextKey so the forecast section builds the correct payload
@@ -192,20 +201,6 @@ export function initIndikatorPage(config) {
 }
 
 // ─── Private helpers ────────────────────────────────────────────────────────
-
-function renderSkeletonIndicators(count = 4) {
-  let html = '';
-  for (let i = 0; i < count; i++) {
-    html += `
-      <div class="skeleton-card indicator-option-skeleton" style="animation-delay:${i * 0.1}s">
-        <div class="skeleton skeleton-line--short" style="height:14px;margin-bottom:12px;"></div>
-        <div class="skeleton skeleton-line--full" style="height:12px;margin-bottom:8px;"></div>
-        <div class="skeleton skeleton-line--medium" style="height:12px;"></div>
-      </div>
-    `;
-  }
-  return `<div class="indicator-options-grid">${html}</div>`;
-}
 
 function errorState(message) {
   return `
