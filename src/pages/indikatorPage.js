@@ -81,9 +81,6 @@ export function renderIndikatorPage(config) {
           Field metadata berikut terisi mengikuti indikator yang Anda pilih. Terima, sesuaikan, atau ganti
           setiap rekomendasi AI di bawah ini sesuai kebutuhan.
         </p>
-        <button class="btn btn--outline btn--sm" id="btn-back-to-indicator-${t}" style="margin-bottom:var(--space-lg);">
-          ← Kembali ke Pemilihan Indikator
-        </button>
         <div id="recs-container-${t}"></div>
       </div>
 
@@ -105,7 +102,6 @@ export function initIndikatorPage(config) {
   const step3 = document.getElementById(`step-3-${t}`);
   const indicatorFieldContainer = document.getElementById(`indicator-field-container-${t}`);
   const recsContainer = document.getElementById(`recs-container-${t}`);
-  const backBtn = document.getElementById(`btn-back-to-indicator-${t}`);
 
   if (!input || !btn) return;
 
@@ -186,14 +182,6 @@ export function initIndikatorPage(config) {
     return getSmartAssessment(config.type, currentInputText, text)
       .then((assessment) => setKesesuaianResult(t, assessment))
       .catch((err) => setKesesuaianError(t, err.message));
-  }
-
-  if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      step3.style.display = 'none';
-      step2.style.display = 'block';
-      step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
   }
 
   // ─── Step 2 → Step 3: fetch metadata fields for the final indicator text ──
