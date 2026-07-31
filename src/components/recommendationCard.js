@@ -1,7 +1,7 @@
 import { getForecastRecommendations } from '../services/apiClient.js';
 import { AI_TIP_TEXT } from '../config/uiCopy.js';
 
-const TARGET_YEARS = [2021, 2022, 2023, 2024, 2025, 2026];
+const TARGET_YEARS = [2021, 2022, 2023, 2024, 2025];
 
 /**
  * Render a single recommendation card.
@@ -161,14 +161,16 @@ export function initForecastSection(forecastContextKey, value) {
  */
 function applyRealForecastResult(result, { descEl, tilesEl, detailEl }) {
   const { previousPeriod, forecastedPeriod, trendAnalysis } = result;
-  const forecastYears = Object.keys(forecastedPeriod.values);
+  // Output/projection section always shows at most as many boxes as the
+  // Target input section (TARGET_YEARS.length), even if the API returns more.
+  const forecastEntries = Object.entries(forecastedPeriod.values).slice(0, TARGET_YEARS.length);
 
   if (descEl) {
-    descEl.innerHTML = `Berdasarkan ${previousPeriod.label || 'tren data historis'},<br>AI memproyeksikan target ${forecastYears.length} tahun ke depan`;
+    descEl.innerHTML = `Berdasarkan ${previousPeriod.label || 'tren data historis'},<br>AI memproyeksikan target ${forecastEntries.length} tahun ke depan`;
   }
 
   if (tilesEl) {
-    tilesEl.innerHTML = Object.entries(forecastedPeriod.values)
+    tilesEl.innerHTML = forecastEntries
       .map(
         ([year, val]) => `
         <div class="forecast-tile">

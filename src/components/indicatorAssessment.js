@@ -93,13 +93,40 @@ function renderKesesuaianError(message) {
   `;
 }
 
+function renderKesesuaianEmpty() {
+  // Same meter/row layout as a real result, but with every segment inactive
+  // (no `--filled` class, no color) and a muted "Belum dinilai" caption.
+  const segments = Array.from({ length: METER_SEGMENTS })
+    .map(() => '<span class="kesesuaian-meter__segment"></span>')
+    .join('');
+
+  return `
+    <div class="kesesuaian-row">
+      <span class="kesesuaian-row__label">Kesesuaian Indikator: <span style="color:var(--color-text-muted);">Belum dinilai</span></span>
+      <div class="kesesuaian-meter">
+        <div class="kesesuaian-meter__track">${segments}</div>
+        <span class="kesesuaian-meter__caption" style="color:var(--color-text-muted);">Belum dinilai</span>
+      </div>
+    </div>
+    <p class="input-group__hint" style="margin-top:var(--space-sm);margin-bottom:0;">
+      Klik "Nilai Kesesuaian SMART" untuk menilai indikator pada kolom Uraian Indikator di atas.
+    </p>
+  `;
+}
+
 /**
  * Update the "Kesesuaian Indikator" block for a given namespace to a
- * loading state, an error state, or a rendered assessment.
+ * loading state, an error state, an empty/stale-cleared state, or a
+ * rendered assessment.
  */
 export function setKesesuaianLoading(namespace) {
   const el = document.getElementById(`kesesuaian-block-${namespace}`);
   if (el) el.innerHTML = renderKesesuaianLoading();
+}
+
+export function setKesesuaianEmpty(namespace) {
+  const el = document.getElementById(`kesesuaian-block-${namespace}`);
+  if (el) el.innerHTML = renderKesesuaianEmpty();
 }
 
 export function setKesesuaianError(namespace, message) {
@@ -114,12 +141,14 @@ export function setKesesuaianResult(namespace, assessment) {
 
 /**
  * Render the editable "Uraian Indikator" field together with a compact
- * SMART/"Kesesuaian Indikator" meter (loading until the real assessment
- * arrives) and the AI recommendation reference row + reasoning.
+ * SMART/"Kesesuaian Indikator" meter (empty until the user asks for an
+ * assessment) and the AI recommendation reference row + reasoning.
  *
  * The field itself starts empty — the AI recommendation is only a
  * reference shown below it until the user clicks "Gunakan" (or types
- * their own text).
+ * their own text). The SMART evaluation has no source of its own: it is
+ * always generated from whatever text is currently in this field, and
+ * starts empty because the field itself starts empty.
  *
  * @param {string} recommendedText - the single AI-recommended indicator
  * @param {string} reasoning - why the AI recommended this indicator (Step 1)
@@ -137,7 +166,7 @@ export function renderIndicatorAssessment(recommendedText, reasoning, label, nam
       </div>
 
       <div id="kesesuaian-block-${n}">
-        ${renderKesesuaianLoading()}
+        ${renderKesesuaianEmpty()}
       </div>
 
       <div id="ai-suggestion-block-${n}">
@@ -151,8 +180,11 @@ export function renderIndicatorAssessment(recommendedText, reasoning, label, nam
       </div>
 
       <div class="indicator-assessment__actions">
-        <button class="btn btn--outline btn--update-metadata" id="btn-update-metadata-${n}">
-          Perbarui Metadata dengan Indikator Ini
+        <button class="btn btn--outline" id="btn-evaluate-smart-${n}">
+          Nilai Kesesuaian SMART
+        </button>
+        <button class="btn btn--ai" id="btn-next-${n}">
+          Lanjutkan ke Metadata
         </button>
       </div>
     </div>
@@ -160,21 +192,29 @@ export function renderIndicatorAssessment(recommendedText, reasoning, label, nam
 }
 
 /**
- * Wire up interactions for the Uraian Indikator field: "Gunakan" to restore
- * the AI recommendation, and "Perbarui Metadata" to (re)run the real SMART
- * assessment + metadata generation for whatever indicator text is current.
+ * Wire up interactions for the Uraian Indikator field: "Gunakan" to fill it
+ * with the AI recommendation, "Nilai Kesesuaian SMART" to run the SMART
+ * assessment for whatever text is currently in the field (the field is the
+ * only source of truth — there is no separate assessment for the AI
+ * recommendation), and "Lanjutkan ke Metadata" to move on to the metadata
+ * page using the final indicator text.
  *
  * @param {object} opts
  * @param {string} opts.namespace
  * @param {string} opts.recommendedText
- * @param {function(finalText: string): void} opts.onUpdateMetadata
+ * @param {function(currentText: string): void} [opts.onIndicatorEdited] -
+ *   called whenever the indicator field's raw text changes. Used to clear a
+ *   now-stale SMART result when it no longer matches the field's text.
+ * @param {function(finalText: string): void} opts.onEvaluateSmart
+ * @param {function(finalText: string): void} opts.onNext
  */
-export function initIndicatorAssessment({ namespace, recommendedText, onUpdateMetadata }) {
+export function initIndicatorAssessment({ namespace, recommendedText, onIndicatorEdited, onEvaluateSmart, onNext }) {
   const n = namespace;
   const textarea = document.getElementById(`indicator-input-${n}`);
-  const updateBtn = document.getElementById(`btn-update-metadata-${n}`);
+  const evaluateBtn = document.getElementById(`btn-evaluate-smart-${n}`);
+  const nextBtn = document.getElementById(`btn-next-${n}`);
 
-  if (!textarea || !updateBtn) return;
+  if (!textarea || !evaluateBtn || !nextBtn) return;
 
   initAiSuggestionCard({
     idSuffix: `indicator-${n}`,
@@ -182,10 +222,26 @@ export function initIndicatorAssessment({ namespace, recommendedText, onUpdateMe
     targetTextarea: textarea,
   });
 
-  updateBtn.addEventListener('click', () => {
+  textarea.addEventListener('input', () => {
+    onIndicatorEdited?.(textarea.value.trim());
+  });
+
+  evaluateBtn.addEventListener('click', () => {
     const finalText = textarea.value.trim();
     if (!finalText) return;
-    onUpdateMetadata(finalText);
+    onEvaluateSmart(finalText);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    let finalText = textarea.value.trim();
+    if (!finalText) {
+      // Accepting the AI recommendation implicitly: populate the field so
+      // it remains the single source of truth for the chosen indicator.
+      finalText = recommendedText;
+      textarea.value = recommendedText;
+    }
+    if (!finalText) return;
+    onNext(finalText);
   });
 }
 

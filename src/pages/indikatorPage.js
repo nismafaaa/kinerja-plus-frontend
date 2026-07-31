@@ -7,6 +7,7 @@ import {
   setKesesuaianLoading,
   setKesesuaianError,
   setKesesuaianResult,
+  setKesesuaianEmpty,
 } from '../components/indicatorAssessment.js';
 import {
   renderRecommendationCard,
@@ -56,18 +57,33 @@ export function renderIndikatorPage(config) {
         </button>
       </div>
 
-      <!-- STEP 2: Indicator + full metadata, all visible at once -->
+      <!-- STEP 2: Indicator selection + SMART evaluation -->
       <div class="step-section" id="step-2-${t}" style="display:none;">
         <div class="step-label">
           <span class="step-number">2</span>
-          Lengkapi Metadata Indikator ${config.label}
+          Pilih Indikator ${config.label}
         </div>
         <p class="input-group__hint step-hint">
           AI menyusun satu rekomendasi <strong>Indikator ${config.label}</strong> berdasarkan
-          ${config.inputLabel.toLowerCase()} Anda. Terima, sesuaikan, atau ganti dengan indikator Anda sendiri —
-          field metadata di bawah akan terisi mengikuti indikator ini.
+          ${config.inputLabel.toLowerCase()} Anda. Terima rekomendasi ini, atau ganti dengan indikator Anda
+          sendiri, lalu tinjau kesesuaiannya dengan kriteria SMART sebelum melanjutkan.
         </p>
         <div id="indicator-field-container-${t}"></div>
+      </div>
+
+      <!-- STEP 3: Indicator metadata -->
+      <div class="step-section" id="step-3-${t}" style="display:none;">
+        <div class="step-label">
+          <span class="step-number">3</span>
+          Lengkapi Metadata Indikator ${config.label}
+        </div>
+        <p class="input-group__hint step-hint">
+          Field metadata berikut terisi mengikuti indikator yang Anda pilih. Terima, sesuaikan, atau ganti
+          setiap rekomendasi AI di bawah ini sesuai kebutuhan.
+        </p>
+        <button class="btn btn--outline btn--sm" id="btn-back-to-indicator-${t}" style="margin-bottom:var(--space-lg);">
+          ← Kembali ke Pemilihan Indikator
+        </button>
         <div id="recs-container-${t}"></div>
       </div>
 
@@ -86,13 +102,19 @@ export function initIndikatorPage(config) {
   const input = document.getElementById(`input-${t}`);
   const btn = document.getElementById(`btn-generate-${t}`);
   const step2 = document.getElementById(`step-2-${t}`);
+  const step3 = document.getElementById(`step-3-${t}`);
   const indicatorFieldContainer = document.getElementById(`indicator-field-container-${t}`);
   const recsContainer = document.getElementById(`recs-container-${t}`);
+  const backBtn = document.getElementById(`btn-back-to-indicator-${t}`);
 
   if (!input || !btn) return;
 
   let currentInputText = '';
   let currentSelectedIndicator = '';
+  // Indicator text the currently-displayed SMART result corresponds to.
+  // null means the displayed result (if any) is stale/cleared and must be
+  // regenerated before it can be trusted.
+  let smartAssessedFor = null;
 
   // Fields other than Uraian Indikator, in display order
   const metadataFieldOrder = FIELD_ORDER.filter((key) => key !== 'uraianIndikator');
@@ -106,14 +128,14 @@ export function initIndikatorPage(config) {
     btn.disabled = input.value.trim().length < 5;
   });
 
-  // ─── Step 1 → Step 2: recommend one indicator, then auto-fill metadata ──
+  // ─── Step 1 → Step 2: recommend one indicator, then evaluate it with SMART ──
   async function generateOptions() {
     currentInputText = input.value.trim();
     if (!currentInputText) return;
 
     step2.style.display = 'block';
+    step3.style.display = 'none';
     indicatorFieldContainer.innerHTML = renderSkeletonAssessment();
-    recsContainer.innerHTML = renderSkeletonCards(metadataFieldOrder.length);
     btn.disabled = true;
     btn.innerHTML = 'Menganalisis...';
 
@@ -124,17 +146,27 @@ export function initIndikatorPage(config) {
         config.type,
         currentInputText
       );
+      currentSelectedIndicator = recommendedText;
+      smartAssessedFor = null;
       indicatorFieldContainer.innerHTML = renderIndicatorAssessment(recommendedText, reasoning, config.label, t);
       initIndicatorAssessment({
         namespace: t,
         recommendedText,
-        onUpdateMetadata: (finalText) => generateMetadata(finalText),
+        onIndicatorEdited: (text) => {
+          // The indicator field no longer matches what was last SMART-assessed
+          // — don't keep showing an evaluation that belongs to different text.
+          if (smartAssessedFor !== null && text !== smartAssessedFor) {
+            smartAssessedFor = null;
+            setKesesuaianEmpty(t);
+          }
+        },
+        onEvaluateSmart: (finalText) => evaluateSmart(finalText),
+        onNext: (finalText) => goToMetadata(finalText),
       });
 
-      // All metadata fields are already visible (as skeletons) — auto-fill
-      // them immediately using the AI's recommended indicator text, along
-      // with the real SMART assessment for that indicator.
-      await generateMetadata(recommendedText);
+      // Note: the SMART block stays empty here — it is never pre-populated
+      // for the AI recommendation. It's only ever generated from whatever
+      // text the user has put in the "Uraian Indikator" field themselves.
     } catch (err) {
       indicatorFieldContainer.innerHTML = errorState(err.message);
     }
@@ -145,16 +177,32 @@ export function initIndikatorPage(config) {
 
   btn.addEventListener('click', generateOptions);
 
-  // ─── Fetch/refresh the metadata fields + SMART assessment for a given
-  // indicator text ───────────────────────────────────────────────────────
-  async function generateMetadata(selectedName) {
-    currentSelectedIndicator = selectedName;
-    recsContainer.innerHTML = renderSkeletonCards(metadataFieldOrder.length);
+  // ─── Run the SMART assessment for whatever text is in the indicator field ──
+  function evaluateSmart(text) {
+    currentSelectedIndicator = text;
+    smartAssessedFor = text;
     setKesesuaianLoading(t);
 
-    getSmartAssessment(config.type, currentInputText, selectedName)
+    return getSmartAssessment(config.type, currentInputText, text)
       .then((assessment) => setKesesuaianResult(t, assessment))
       .catch((err) => setKesesuaianError(t, err.message));
+  }
+
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      step3.style.display = 'none';
+      step2.style.display = 'block';
+      step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  // ─── Step 2 → Step 3: fetch metadata fields for the final indicator text ──
+  async function goToMetadata(selectedName) {
+    currentSelectedIndicator = selectedName;
+
+    step3.style.display = 'block';
+    recsContainer.innerHTML = renderSkeletonCards(metadataFieldOrder.length);
+    step3.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     try {
       const recs = await getIndicatorDetails(config.type, currentInputText, selectedName);
