@@ -373,7 +373,7 @@ export function initCardActions(recommendations, onStateChange, onRegenerate) {
   return state;
 }
 
-function showToast(message, type = 'info') {
+export function showToast(message, type = 'info') {
   document.querySelectorAll('.toast').forEach((t) => t.remove());
 
   const toast = document.createElement('div');

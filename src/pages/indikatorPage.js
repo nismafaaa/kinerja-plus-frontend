@@ -16,6 +16,7 @@ import {
   initForecastSection,
 } from '../components/recommendationCard.js';
 import { renderAiAssistedField, initAiAssistedField } from '../components/aiAssistedField.js';
+import { errorState } from '../components/sectionCard.js';
 import {
   getIndicatorRecommendation,
   getSmartAssessment,
@@ -234,15 +235,4 @@ export function initIndikatorPage(config) {
       recsContainer.innerHTML = errorState(err.message);
     }
   }
-}
-
-// ─── Private helpers ────────────────────────────────────────────────────────
-
-function errorState(message) {
-  return `
-    <div class="empty-state">
-      <div class="empty-state__icon">!</div>
-      <div class="empty-state__text">Gagal memuat: ${message}</div>
-    </div>
-  `;
 }

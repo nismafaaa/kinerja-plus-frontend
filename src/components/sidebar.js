@@ -1,26 +1,47 @@
 import { ENTITY_CONFIG } from '../config/entities.js';
 
+// MenRis isn't a recommendation-flow entity (ENTITY_CONFIG is typed for that:
+// forecastContextKey, inputLabel, etc.), so it gets a small parallel nav
+// descriptor instead of being force-fit into ENTITY_CONFIG. `insertAfter`
+// places it directly beneath that entity's link, at the same indent level.
+const NAV_EXTRAS = [
+  {
+    key: 'manajemen-risiko',
+    hash: '#/manajemen-risiko',
+    navLabel: 'Manajemen Risiko',
+    hierarchyLevel: 1,
+    insertAfter: 'sasaran',
+  },
+];
+
+function renderNavItem(item, activeType) {
+  const isActive = (item.type || item.key) === activeType;
+  // Visual hierarchy: indent each level 12px deeper
+  const indent = item.hierarchyLevel * 12;
+  // Connector line visual for sub-levels
+  const connector = item.hierarchyLevel > 0
+    ? `<span class="sidebar__nav-connector" aria-hidden="true"></span>`
+    : '';
+  return `
+    <a href="${item.hash}"
+       class="sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''} sidebar__nav-item--level-${item.hierarchyLevel}"
+       id="nav-${item.type || item.key}"
+       style="padding-left: calc(var(--space-md) + ${indent}px)"
+    >
+      ${connector}
+      <span class="sidebar__nav-icon">&#8226;</span>
+      ${item.navLabel}
+    </a>
+  `;
+}
+
 export function renderSidebar(activeType) {
   const navItems = Object.values(ENTITY_CONFIG)
     .map((cfg) => {
-      const isActive = cfg.type === activeType;
-      // Visual hierarchy: indent each level 12px deeper
-      const indent = cfg.hierarchyLevel * 12;
-      // Connector line visual for sub-levels
-      const connector = cfg.hierarchyLevel > 0
-        ? `<span class="sidebar__nav-connector" aria-hidden="true"></span>`
-        : '';
-      return `
-        <a href="${cfg.hash}"
-           class="sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''} sidebar__nav-item--level-${cfg.hierarchyLevel}"
-           id="nav-${cfg.type}"
-           style="padding-left: calc(var(--space-md) + ${indent}px)"
-        >
-          ${connector}
-          <span class="sidebar__nav-icon">&#8226;</span>
-          ${cfg.navLabel}
-        </a>
-      `;
+      const extras = NAV_EXTRAS.filter((extra) => extra.insertAfter === cfg.type)
+        .map((extra) => renderNavItem(extra, activeType))
+        .join('');
+      return renderNavItem(cfg, activeType) + extras;
     })
     .join('');
 

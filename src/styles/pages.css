@@ -1192,3 +1192,480 @@
     max-width: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Manajemen Risiko (MenRis)
+   ══════════════════════════════════════════════════════════════════════ */
+
+.required-mark {
+  color: var(--color-danger);
+}
+
+/* --- Wider page body for the two-column MenRis layout --- */
+.menris-page-body {
+  max-width: 1200px;
+}
+
+.menris-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.menris-layout__main {
+  min-width: 0;
+}
+
+.menris-layout__aside {
+  position: sticky;
+  top: var(--space-lg);
+}
+
+@media (max-width: 960px) {
+  .menris-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .menris-layout__aside {
+    position: static;
+  }
+}
+
+/* --- Section card (generalized .step-section header) --- */
+.section-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.section-card__title-block {
+  margin-bottom: 0;
+  align-items: flex-start;
+}
+
+.section-card__title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.section-card__subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* --- Context picker --- */
+.menris-context-picker {
+  margin-bottom: var(--space-xl);
+}
+
+.menris-example-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-sm);
+}
+
+.menris-example-chips__label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.menris-example-chip {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+}
+
+.menris-example-chip:hover {
+  background: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.menris-example-chip--active {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border-color: var(--color-primary-dark);
+}
+
+.menris-context-summary__row {
+  margin-bottom: var(--space-md);
+}
+
+.menris-context-summary__label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+
+.menris-context-summary__value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+/* --- Select field --- */
+.select-field__control {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 8px var(--space-md);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.select-field__control:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+}
+
+/* --- Radio group --- */
+.radio-group__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-sm);
+}
+
+.radio-group__option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.radio-group__option:hover {
+  border-color: var(--color-primary);
+}
+
+.radio-group__option--selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.radio-group__option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.radio-group__option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radio-group__option-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.radio-group__option-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* --- Repeater list (Seksi 4 existing controls + Seksi 8 mitigation actions) --- */
+.repeater-list__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.repeater-list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.repeater-list__badge {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.repeater-list__input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: var(--font-size-sm);
+  outline: none;
+  padding: 4px;
+}
+
+.repeater-list__remove-btn {
+  color: var(--color-text-muted);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-base);
+}
+
+.repeater-list__remove-btn:hover {
+  color: var(--color-danger);
+}
+
+/* --- Seksi 8 mitigation action rows (richer than a plain repeater row) --- */
+.mitigasi-action-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-sm);
+  background: var(--color-bg);
+}
+
+.mitigasi-action-row__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.mitigasi-action-row textarea {
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  background: var(--color-surface);
+}
+
+.mitigasi-action-row textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.1);
+}
+
+/* --- Risk score badge --- */
+.score-section__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  align-items: end;
+}
+
+.risk-score-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.risk-score-badge__label {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.risk-score-badge__pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.risk-score-badge__pill--empty {
+  background: var(--color-border-light);
+  color: var(--color-text-muted);
+}
+
+.risk-score-badge__pill--sangat-rendah {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.risk-score-badge__pill--rendah {
+  background: #F7FEE7;
+  color: #3F6212;
+}
+
+.risk-score-badge__pill--sedang {
+  background: var(--color-warning-light);
+  color: #92400E;
+}
+
+.risk-score-badge__pill--tinggi {
+  background: #FFF7ED;
+  color: #9A3412;
+}
+
+.risk-score-badge__pill--sangat-tinggi {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+/* --- Selera Risiko warning banner --- */
+.menris-appetite-warning {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-warning-light);
+  color: #92400E;
+  font-size: var(--font-size-xs);
+  line-height: 1.6;
+}
+
+/* --- Sticky checklist --- */
+.menris-checklist {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-md);
+}
+
+.menris-checklist__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-sm);
+}
+
+.menris-checklist__count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.menris-checklist__progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-border-light);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.menris-checklist__progress-bar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width var(--transition-base);
+}
+
+.menris-checklist__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menris-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 6px var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.menris-checklist__item:hover {
+  background: var(--color-bg);
+}
+
+.menris-checklist__number {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menris-checklist__item--done .menris-checklist__number {
+  background: var(--color-success);
+  color: #FFFFFF;
+}
+
+.menris-checklist__label {
+  flex: 1;
+}
+
+.menris-checklist__check {
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+}
+
+/* --- Footer actions --- */
+.menris-footer {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.menris-footer__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.menris-footer__hint {
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  .menris-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .menris-footer__actions {
+    justify-content: center;
+  }
+}
